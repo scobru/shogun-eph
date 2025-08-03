@@ -1,35 +1,36 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
+import { useEffect, useState } from "react";
 
 interface ConnectionStatusProps {
-  isConnected: boolean
+  isConnected: boolean;
 }
 
-export default function ConnectionStatus({ isConnected }: ConnectionStatusProps) {
-  const [statusText, setStatusText] = useState("Connecting...")
-  const [dotColor, setDotColor] = useState("bg-yellow-500")
-  const [textColor, setTextColor] = useState("text-gray-400")
-  const [pulseClass, setPulseClass] = useState("pulse-green")
+export default function ConnectionStatus({
+  isConnected,
+}: ConnectionStatusProps) {
+  const [statusText, setStatusText] = useState("Connecting...");
+  const [dotColor, setDotColor] = useState("bg-yellow-500");
+  const [textColor, setTextColor] = useState("text-gray-400");
+  const [pulseClass, setPulseClass] = useState("pulse-green");
 
   useEffect(() => {
     if (isConnected) {
-      setStatusText("Connected")
-      setDotColor("bg-green-500")
-      setTextColor("text-green-400")
-      setPulseClass("") // Remove animation when connected
+      setStatusText("Connected");
+      setDotColor("bg-green-500");
+      setTextColor("text-green-400");
+      setPulseClass(""); // Remove animation when connected
     } else {
-      setStatusText("Disconnected")
-      setDotColor("bg-red-500")
-      setTextColor("text-red-400")
-      setPulseClass("") // Remove animation when disconnected
+      setStatusText("Disconnected");
+      setDotColor("bg-red-500");
+      setTextColor("text-red-400");
+      setPulseClass(""); // Remove animation when disconnected
     }
-  }, [isConnected])
+  }, [isConnected]);
 
   return (
-    <div className="flex items-center space-x-2">
-      <div className={`w-3 h-3 rounded-full ${dotColor} ${pulseClass}`}></div>
-      <span className={`text-sm ${textColor} font-mono`}>{statusText}</span>
+    <div className="flex items-center space-x-1">
+      <div className={`w-1.5 h-1.5 rounded-full ${dotColor} ${pulseClass}`} title={statusText}></div>
       <style jsx>{`
         @keyframes pulse {
           0%,
@@ -45,5 +46,5 @@ export default function ConnectionStatus({ isConnected }: ConnectionStatusProps)
         }
       `}</style>
     </div>
-  )
+  );
 }
