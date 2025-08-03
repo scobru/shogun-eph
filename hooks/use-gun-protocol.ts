@@ -8,6 +8,8 @@ import {
   type RoomKeys,
   type ChatRoom,
   type UserPresence,
+  type PublishedRoom,
+  type PublishRoomData,
 } from "@/lib/gun-protocol";
 
 interface UseEphConfig {
@@ -39,6 +41,12 @@ interface UseEphReturn {
   generateRoomUrl: (roomId: string, keys: RoomKeys) => string;
   parseRoomFromUrl: (hash: string) => { roomId: string; keys: RoomKeys } | null;
 
+  // Public room publishing
+  publishedRooms: PublishedRoom[];
+  publishRoom: (data: PublishRoomData) => Promise<void>;
+  removePublishedRoom: (roomId: string) => Promise<void>;
+  listenToPublishedRooms: () => () => void;
+
   // Utility
   retryConnection: () => void;
   listenToPresence: (roomId: string, username: string) => () => void;
@@ -54,6 +62,7 @@ export function useEph(config: UseEphConfig): UseEphReturn {
   const [roomKeys, setRoomKeys] = useState<RoomKeys | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<UserPresence[]>([]);
+  const [publishedRooms, setPublishedRooms] = useState<PublishedRoom[]>([]);
 
   // Refs
   const protocolRef = useRef<Eph | null>(null);
@@ -118,6 +127,17 @@ export function useEph(config: UseEphConfig): UseEphReturn {
         setOnlineUsers(users);
       }
     );
+
+    return cleanup;
+  }, []);
+
+  // Listen to published rooms
+  const listenToPublishedRooms = useCallback(() => {
+    if (!protocolRef.current || !isInitializedRef.current) return () => {};
+
+    const cleanup = protocolRef.current.listenToPublishedRooms((rooms) => {
+      setPublishedRooms(rooms);
+    });
 
     return cleanup;
   }, []);
@@ -272,6 +292,28 @@ export function useEph(config: UseEphConfig): UseEphReturn {
     },
     generateRoomUrl,
     parseRoomFromUrl,
+
+    // Public room publishing
+    publishedRooms,
+    publishRoom: async (data: PublishRoomData) => {
+      if (!protocolRef.current || !isInitializedRef.current) return;
+      try {
+        await protocolRef.current.publishRoom(data);
+      } catch (error) {
+        console.error("Error publishing room:", error);
+        setError("Failed to publish room");
+      }
+    },
+    removePublishedRoom: async (roomId: string) => {
+      if (!protocolRef.current || !isInitializedRef.current) return;
+      try {
+        await protocolRef.current.removePublishedRoom(roomId);
+      } catch (error) {
+        console.error("Error removing published room:", error);
+        setError("Failed to remove published room");
+      }
+    },
+    listenToPublishedRooms: listenToPublishedRooms,
 
     // Utility
     retryConnection,

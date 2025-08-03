@@ -34,6 +34,24 @@ export interface ChatRoom {
   messagesRef: any;
 }
 
+// New interfaces for public room publishing
+export interface PublishedRoom {
+  id: string;
+  name: string;
+  description?: string;
+  roomUrl: string;
+  createdAt: number;
+  createdBy: string;
+  participantsCount?: number;
+}
+
+export interface PublishRoomData {
+  name: string;
+  description?: string;
+  roomUrl: string;
+  createdBy: string;
+}
+
 declare global {
   interface Window {
     Gun: any;
@@ -46,6 +64,7 @@ export class Eph {
   private isInitialized = false;
   private config: EphConfig;
   private processedMessages = new Set<string>();
+  private processedRooms = new Set<string>();
   private presenceRefs: Map<string, any> = new Map();
   private presenceUsers: Map<string, UserPresence> = new Map();
 
@@ -342,6 +361,77 @@ export class Eph {
   }
 
   /**
+   * Publish a room to the public directory
+   */
+  async publishRoom(data: PublishRoomData): Promise<void> {
+    if (!this.gun) throw new Error("GunDB not initialized");
+
+    const publicRoomsRef = this.gun.get("public_rooms");
+    const roomId = this.generateRoomId();
+
+    const publishedRoom: PublishedRoom = {
+      id: roomId,
+      name: data.name,
+      description: data.description,
+      roomUrl: data.roomUrl,
+      createdAt: Date.now(),
+      createdBy: data.createdBy,
+    };
+
+    publicRoomsRef.get(roomId).put(publishedRoom);
+  }
+
+  /**
+   * Listen to published rooms
+   */
+  listenToPublishedRooms(
+    onRoomsChange: (rooms: PublishedRoom[]) => void,
+    onError?: (error: Error) => void
+  ): () => void {
+    if (!this.gun) return () => {};
+
+    const publicRoomsRef = this.gun.get("public_rooms");
+    const rooms = new Map<string, PublishedRoom>();
+
+    const roomHandler = (roomData: PublishedRoom, roomId: string) => {
+      // Prevent duplicate processing
+      const roomKey = `${roomId}_${roomData?.createdAt || 0}`;
+      if (this.processedRooms.has(roomKey)) return;
+
+      if (roomData && roomData.name && roomData.roomUrl) {
+        rooms.set(roomId, { ...roomData, id: roomId });
+        this.processedRooms.add(roomKey);
+      } else {
+        rooms.delete(roomId);
+      }
+
+      // Convert to array and sort by creation date (newest first)
+      const roomsArray = Array.from(rooms.values()).sort(
+        (a, b) => b.createdAt - a.createdAt
+      );
+
+      onRoomsChange(roomsArray);
+    };
+
+    publicRoomsRef.map().on(roomHandler);
+
+    // Return cleanup function
+    return () => {
+      publicRoomsRef.map().off(roomHandler);
+    };
+  }
+
+  /**
+   * Remove a published room
+   */
+  async removePublishedRoom(roomId: string): Promise<void> {
+    if (!this.gun) throw new Error("GunDB not initialized");
+
+    const publicRoomsRef = this.gun.get("public_rooms");
+    publicRoomsRef.get(roomId).put(null);
+  }
+
+  /**
    * Generate a unique room ID
    */
   private generateRoomId(): string {
@@ -362,6 +452,7 @@ export class Eph {
    */
   destroy(): void {
     this.processedMessages.clear();
+    this.processedRooms.clear();
     this.presenceRefs.clear();
     this.presenceUsers.clear();
     this.gun = null;

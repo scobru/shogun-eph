@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Send, Settings, Share2 } from "lucide-react";
+import { Send, Settings, Share2, Globe } from "lucide-react";
 import UsernameModal from "@/components/username-modal";
 import MessageList from "@/components/message-list";
 import ConnectionStatus from "@/components/connection-status";
@@ -172,8 +172,8 @@ export default function GunChat() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white font-mono">
-      <div className="container mx-auto max-w-4xl h-screen flex flex-col border-x border-gray-700 ">
+    <div className="min-h-screen bg-gray-900 text-white font-mono flex flex-col">
+      <div className="container mx-auto max-w-4xl h-screen flex flex-col border-x border-gray-700 flex-1">
         {/* Ultra Compact Header */}
         <header className="bg-gray-800  border-b border-gray-700 flex items-center justify-between h-12">
           <div className="flex items-center space-x-4">
@@ -200,6 +200,16 @@ export default function GunChat() {
               className="text-gray-400 hover:text-white h-6 w-6 p-0"
             >
               <Share2 className="w-3 h-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              className="text-gray-400 hover:text-white h-6 w-6 p-0"
+            >
+              <a href="/public-rooms" title="Public Rooms">
+                <Globe className="w-3 h-3" />
+              </a>
             </Button>
           </div>
         </header>
@@ -240,6 +250,45 @@ export default function GunChat() {
         </div>
       </div>
 
+      {/* Footer */}
+      <footer className="bg-gray-800 border-t border-gray-700 py-4 mt-auto">
+        <div className="container mx-auto max-w-4xl px-4">
+          <div className="text-center">
+            <p className="text-gray-400 text-xs mb-1">
+              <a
+                href="https://github.com/scobru/shogun-eph"
+                className="text-green-400 hover:text-green-300 transition-colors"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                repo
+              </a>
+              {" - "}
+              built with ❤️ by {""}
+              <a
+                href="https://github.com/scobru"
+                className="text-green-400 hover:text-green-300 transition-colors"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                scobru
+              </a>
+            </p>
+            <p className="text-gray-500 text-xs">
+              part of {""}
+              <a
+                href="https://shogun-eco.xyz"
+                className="text-green-400 hover:text-green-300 transition-colors"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                shogun project
+              </a>
+            </p>
+          </div>
+        </div>
+      </footer>
+
       {/* Modals */}
       <UsernameModal
         isOpen={showUsernameModal}
@@ -250,6 +299,8 @@ export default function GunChat() {
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
         shareUrl={shareUrl}
+        roomId={roomId || undefined}
+        username={username}
       />
     </div>
   );
